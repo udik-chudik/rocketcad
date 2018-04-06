@@ -2,6 +2,13 @@ import numpy as np
 from transforms3d import euler
 
 
+class FlightController(object):
+	"""docstring for FlightController"""
+	def __init__(self, arg):
+		super(FlightController, self).__init__()
+		self.arg = arg
+		
+
 class Rocket(object):
 	"""
 		params:
@@ -35,8 +42,8 @@ class Stage(object):
 	def getRcm(self):
 		return self.CM
 
-	def getThrust(self, dmdt):
-		return np.array([e.getThrust(dmdt) for e in self.engines]).sum(axis=0)
+	def getThrust(self):
+		return np.array([e.getThrust() for e in self.engines]).sum(axis=0)
 
 	def getMoment(self):
 		return 0
@@ -44,21 +51,38 @@ class Stage(object):
 
 class Engine(object):
 
-	def __init__(self, u, r, o):
+	def __init__(self, u, r, o, dmdt, id):
+		"""
+			u - velocity of gas flow from the nozzle [m/s]
+			r - X, Y, Z of nozzle relative to a stage reference system (RS)
+			o - rotation matrix from engine RS to a stage RS
+			dmdt - design fuel consumption dM/dt [kg/s]
+			id - identity of the engine (required by the flight controller)
+		"""
 		super(Engine, self).__init__()
 		self.u = u
 		self.R = r
 		self.O = o
-		
-	def getThrust(self, dmdt):
-		return self.O.dot(np.array([self.u*dmdt, 0, 0]))
+		self.dmdt = dmdt
+		self.id = id
+		self.throttle = 0
+	
+	def setThrottle(self, throttle):
+		"""
+			throttle - thrust throttle coefficient (0 - engine off, 1 - full thrust)
+		"""
+		self.throttle = throttle
 
-		#return self.u*dmdt
-		"""
-		return euler.euler2mat(self.params['direction'][0],
-			self.params['direction'][1],
-			self.params['direction'][2], axes='sxyz').dot(np.array([self.params['u']*dmdt, 0, 0]))
-		"""
+	def getThrust(self):
+		return self.O.dot(np.array([self.u*self.dmdt, 0, 0]))
+
+	def getFuelConsumption(self):
+		return self.dmdt*self.throttle
+
+
+	def getPosition(self):
+		return self.R
+
 	"""	
 	def Momentum(self, dmdt, cm_vector):
 		
