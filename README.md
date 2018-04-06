@@ -11,7 +11,7 @@ This program allows to simulate a rocket flight, perform construction and automa
 ```
 conda install numpy
 conda install scipy
-conda install matplotlib`
+conda install matplotlib
 ```
 Download and install [transforms3d](https://pypi.python.org/pypi/transforms3d) package
 
