@@ -1,13 +1,6 @@
 import numpy as np
 from transforms3d import euler
-
-
-class FlightController(object):
-	"""docstring for FlightController"""
-	def __init__(self, arg):
-		super(FlightController, self).__init__()
-		self.arg = arg
-		
+import scipy as sp
 
 class Rocket(object):
 	"""
@@ -18,54 +11,156 @@ class Rocket(object):
 				Example: numpy.array([0,0,0])
 		
 	"""
-	def __init__(self, arg):
+	def __init__(self, engines, stages):
 		super(Rocket, self).__init__()
-		self.params = arg
-		
-
-class Stage(object):
-	
-	def __init__(self, Mc, Mf, engines, CM, I):
-		super(Stage, self).__init__()
-		self.Mc = Mc
-		self.Mf = Mf
 		self.engines = engines
-		self.CM = CM
-		self.I = I
-
-	def getMass(self):
-		return self.Mf + self.Mc
-
-	def getInertia(self):
-		return self.I
+		self.stages = stages
+		self.recalcRcm()
+		self.t = 0
 
 	def getRcm(self):
-		return self.CM
+		return self.Rcm
+
+	def recalcRcm(self):
+		self.Rcm = np.array([s.getMass()*(s.R + s.getRcm()) for s in self.stages]).sum(axis=0)/np.array([s.getMass() for s in self.stages]).sum(axis=0)
+
 
 	def getThrust(self):
 		return np.array([e.getThrust() for e in self.engines]).sum(axis=0)
 
 	def getMoment(self):
-		return 0
+		return np.array([s.getMoment(self.Rcm) for s in self.stages]).sum(axis=0)
 
+	def getMass(self):
+		return np.array([s.getMass() for s in self.stages]).sum(axis=0)
+
+	def getInertia(self):
+		return np.array([[1, 0, 0],[0, 100, 0],[0, 0, 100]])
+
+	def tick(self, dt):
+		self.t = self.t + dt
+		self.flightController()
+		[s.tick(dt) for s in self.stages]
+		self.recalcRcm()
+
+	def flightController(self):
+		if (self.t < 100):
+			self.engines[0].setThrottle(1)
+		else:
+			self.engines[0].setThrottle(0)
+
+
+
+		
+
+class Stage(object):
+	
+
+	def __init__(self, construction, tanks, engines, R):
+		super(Stage, self).__init__()
+
+		self.construction = construction
+		self.tanks = tanks
+		self.engines = engines
+		self.R = R
+
+		self.recalcRcm()
+
+	def getMass(self):
+		return np.array([c.mass for c in self.construction]).sum(axis=0) + np.array([t.getMass() for t in self.tanks]).sum(axis=0)
+
+	def recalcRcm(self):
+		self.Rcm = ( np.array([c.mass*c.Rcm for c in self.construction]).sum(axis=0) + np.array([t.getMass()*t.getRcm() for t in self.tanks]).sum(axis=0) ) / self.getMass()
+
+	def getRcm(self):
+		return self.Rcm
+
+	def getThrust(self):
+		return np.array([e.getThrust() for e in self.engines]).sum(axis=0)
+
+	def getInertia(self):
+		return self.I
+
+	def getMoment(self, Rcm):
+		return np.array([np.cross((e.R + self.R - Rcm), e.getThrust()) for e in self.engines]).sum(axis=0)
+
+	def tick(self, dt):
+		[e.tick(dt) for e in self.engines]
+		self.recalcRcm()
+
+	def separate(self):
+		[c.separate() for c in self.construction]
+		[c.separate() for c in self.tanks]
+		[c.setThrottle(0) for c in self.engines]
+		self.recalcRcm()
+
+
+			
+class SolidObject(object):
+	"""docstring for SolidObject"""
+	def __init__(self, mass, Rcm):
+		super(SolidObject, self).__init__()
+		self.mass = mass
+		self.Rcm = Rcm
+
+	def separate(self):
+		self.mass = 0
+		
+
+		
+class Tank(object):
+	"""docstring for Tank"""
+	def __init__(self, l, m0, R):
+		super(Tank, self).__init__()
+		self.l = l
+		self.m0 = m0
+		self.m = m0
+		self.R = R
+		self.recalcRcm()
+
+	def getRcm(self):
+		return self.Rcm
+
+	def getMass(self):
+		return self.m
+
+	def tick(self, dm):
+		if (self.m - dm) < 0:
+			raise ValueError('Fuel tank is empty!')
+		self.m = self.m - dm
+		self.recalcRcm()
+
+	def recalcRcm(self):
+		self.Rcm = self.R + np.array([-self.l+self.l*self.m/(2*self.m0), 0, 0])
+
+	def separate(self):
+		self.m = 0
+		self.recalcRcm()
+
+class FuelLine(object):
+	"""docstring for FuelLine"""
+	def __init__(self, tank, ratio):
+		super(FuelLine, self).__init__()
+		self.tank = tank
+		self.ratio = ratio
+		
 
 class Engine(object):
 
-	def __init__(self, u, r, o, dmdt, id):
+	def __init__(self, u, r, o, dmdt, fl):
 		"""
 			u - velocity of gas flow from the nozzle [m/s]
 			r - X, Y, Z of nozzle relative to a stage reference system (RS)
 			o - rotation matrix from engine RS to a stage RS
 			dmdt - design fuel consumption dM/dt [kg/s]
-			id - identity of the engine (required by the flight controller)
 		"""
 		super(Engine, self).__init__()
 		self.u = u
 		self.R = r
 		self.O = o
 		self.dmdt = dmdt
-		self.id = id
 		self.throttle = 0
+		self.fl = fl
 	
 	def setThrottle(self, throttle):
 		"""
@@ -74,19 +169,13 @@ class Engine(object):
 		self.throttle = throttle
 
 	def getThrust(self):
-		return self.O.dot(np.array([self.u*self.dmdt, 0, 0]))
+		return self.O.dot(np.array([self.u*self.dmdt*self.throttle, 0, 0]))
 
 	def getFuelConsumption(self):
 		return self.dmdt*self.throttle
 
-
 	def getPosition(self):
 		return self.R
 
-	"""	
-	def Momentum(self, dmdt, cm_vector):
-		
-		#	cm_vector - X, Y, Z of center of mass relative to the initial position
-		
-		return np.cross(self.Thrust(dmdt), self.params['position'] - cm_vector)
-	"""
+	def tick(self, dt):
+		[component.tank.tick(self.getFuelConsumption()*dt*component.ratio) for component in self.fl]
