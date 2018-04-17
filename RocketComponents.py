@@ -45,7 +45,7 @@ class Rocket(object):
 		self.recalcRcm()
 
 	def flightController(self):
-		if (self.t < 100):
+		if (self.t < 10):
 			self.engines[0].setThrottle(1)
 		else:
 			self.engines[0].setThrottle(0)

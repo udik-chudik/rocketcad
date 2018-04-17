@@ -5,7 +5,7 @@ from RocketComponents import *
 def testRocket():
 
 
-	O = euler.euler2mat(0, 0, 0.1, axes='sxyz')
+	O = euler.euler2mat(0, 0, 0.0015, axes='sxyz')
 
 	stage_construction = SolidObject(300, np.array([ -1.1, 0, 0 ]))
 
@@ -13,7 +13,7 @@ def testRocket():
 
 	fl1 = FuelLine(tank1, 1)
 
-	eng1 = Engine(3000, np.array([ -1.2, 0, 0 ]), O, 10, [fl1])
+	eng1 = Engine(3000, np.array([ -1.2, 0, 0 ]), O, 20, [fl1])
 
 	st = Stage([stage_construction], [tank1], [eng1], np.array([0,0,0]))
 
