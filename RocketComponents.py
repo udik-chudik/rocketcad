@@ -35,7 +35,8 @@ class Rocket(object):
 		return np.array([s.getMass() for s in self.stages]).sum(axis=0)
 
 	def getInertia(self):
-		return np.array([[1, 0, 0],[0, 100, 0],[0, 0, 100]])
+		#return np.array([[1, 0, 0],[0, 100, 0],[0, 0, 100]])
+		return np.array([10, 100, 100])
 
 	def tick(self, dt):
 		self.t = self.t + dt
