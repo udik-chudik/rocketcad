@@ -12,7 +12,7 @@ pos0 = euler.euler2mat(0, 0, np.pi/2, axes='sxyz')
 
 ph = Physics(rock, -9.8, 6400000, np.array([0,6400000,0]), np.array([0, 0, 0]), np.array([0, 0, 0]), np.array([0, 0, 0]), pos0)
 
-r = ode(ph.dynamics6d).set_integrator('zvode', method='bdf')
+r = ode(ph.dynamics6d).set_integrator('vode', method='bdf')
 
 f = np.array([0,6400000,0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 r.set_initial_value(f, 0)
