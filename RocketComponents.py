@@ -16,7 +16,7 @@ class Rocket(object):
 		self.engines = engines
 		self.stages = stages
 		self.recalcRcm()
-		self.t = 0
+		self.clock = Sensor(0)
 
 	def getRcm(self):
 		return self.Rcm
@@ -39,19 +39,26 @@ class Rocket(object):
 		return np.array([10, 100, 100])
 
 	def tick(self, dt):
-		self.t = self.t + dt
+		self.clock.setValue(self.clock.getValue() + dt)
 		self.flightController()
 		[s.tick(dt) for s in self.stages]
 		self.recalcRcm()
 
 	def flightController(self):
-		if (self.t < 10):
-			self.engines[0].setThrottle(1)
-		else:
-			self.engines[0].setThrottle(0)
+		return
 
+class Sensor(object):
+	"""docstring for Sensor"""
+	def __init__(self, inital_value):
+		super(Sensor, self).__init__()
+		self.value = inital_value
 
+	def getValue(self):
+		return self.value
 
+	def setValue(self, new_value):
+		self.value = new_value
+		
 		
 
 class Stage(object):
@@ -71,7 +78,11 @@ class Stage(object):
 		return np.array([c.mass for c in self.construction]).sum(axis=0) + np.array([t.getMass() for t in self.tanks]).sum(axis=0)
 
 	def recalcRcm(self):
-		self.Rcm = ( np.array([c.mass*c.Rcm for c in self.construction]).sum(axis=0) + np.array([t.getMass()*t.getRcm() for t in self.tanks]).sum(axis=0) ) / self.getMass()
+		if (self.getMass() == 0):
+			self.Rcm = np.array([0,0,0])
+		else:
+			self.Rcm = ( np.array([c.mass*c.Rcm for c in self.construction]).sum(axis=0) + np.array([t.getMass()*t.getRcm() for t in self.tanks]).sum(axis=0) ) / self.getMass()
+
 
 	def getRcm(self):
 		return self.Rcm
@@ -162,6 +173,7 @@ class Engine(object):
 		self.dmdt = dmdt
 		self.throttle = 0
 		self.fl = fl
+		self.fault = False
 	
 	def setThrottle(self, throttle):
 		"""
@@ -179,4 +191,8 @@ class Engine(object):
 		return self.R
 
 	def tick(self, dt):
-		[component.tank.tick(self.getFuelConsumption()*dt*component.ratio) for component in self.fl]
+		try:
+			[component.tank.tick(self.getFuelConsumption()*dt*component.ratio) for component in self.fl]
+		except Exception:
+			self.setThrottle(0)
+			self.fault = True

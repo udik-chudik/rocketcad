@@ -2,10 +2,24 @@ import numpy as np
 from transforms3d import euler
 from RocketComponents import *
 
+
+class OurRocket(Rocket):
+	
+	def flightController(self):
+		t = self.clock.getValue()
+		engine = self.engines[0]
+
+		if (t > 0 and t < 10 and not engine.fault and engine.throttle < 1):
+			print("Engin ON")
+			self.engines[0].setThrottle(1)
+		else:
+
+			self.engines[0].setThrottle(0)
+
 def testRocket():
 
 
-	O = euler.euler2mat(0, 0, 0.0015, axes='sxyz')
+	O = euler.euler2mat(0, 0, 0, axes='sxyz')
 
 	stage_construction = SolidObject(300, np.array([ -1.1, 0, 0 ]))
 
@@ -17,7 +31,8 @@ def testRocket():
 
 	st = Stage([stage_construction], [tank1], [eng1], np.array([0,0,0]))
 
-	rock = Rocket([eng1], [st])
+	rock = OurRocket([eng1], [st])
+
 
 	return rock
 

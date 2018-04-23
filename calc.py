@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
-from testRocket import testRocket
+import matplotlib.patches as mpatches
+
+from ElectronRocket import Electron
 from Physics import *
 import copy
 
 from scipy.integrate import ode
 
-rock = testRocket()
+rock = Electron()
 
 pos0 = euler.euler2mat(0, 0, np.pi/2, axes='sxyz')
 
@@ -14,11 +16,11 @@ ph = Physics(rock, -9.8, 6400000, np.array([0,6400000,0]), np.array([0, 0, 0]), 
 
 r = ode(ph.dynamics6d).set_integrator('vode', method='bdf')
 
-f = np.array([0,6400000,0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+f = np.array([0,6400000,0, 0, 0, 0, 0, 0, 0, 0, 0, -0.0046])
 r.set_initial_value(f, 0)
 
-tMax = 35
-dt = 0.01
+tMax = 3600*2
+dt = 1
 
 sol = []
 times = []
@@ -32,7 +34,18 @@ while r.successful() and r.t < tMax:
 
 sol = np.array(sol)
 
-plt.plot(sol[:,0], sol[:,1])
+ax = plt.subplot(111, aspect=1)
+
+
+
+ax.plot(sol[:,0], sol[:,1])
+
+earth = mpatches.Circle((0, 0), 6400000, fc="g")
+atmosphere = mpatches.Circle((0, 0), 6500000, facecolor='none', edgecolor='r', linestyle='--')
+ax.add_patch(earth)
+ax.add_patch(atmosphere)
+
+
 plt.show()
 
 """
