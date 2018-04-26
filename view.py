@@ -32,3 +32,8 @@ elif (sys.argv[1] == 'H'):
 
 	ax.plot(sol[:,0], (np.sqrt(sol[:,1]**2 + sol[:,2]**2 + sol[:,3]**2) - 6400000)/1000)
 	plt.show()
+
+elif (sys.argv[1] == 'Rcm'):
+
+	ax.plot(sol[:,0]/100, sol[:,14])
+	plt.show()
