@@ -25,20 +25,21 @@ dt = 1
 sol = []
 times = []
 while r.successful() and r.t < tMax:
-	times.append(r.t)
 	s = r.integrate(r.t+dt)
-	sol.append([s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8],s[9],s[10],s[11]])
+	sol.append([r.t, s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8],s[9],s[10],s[11]])
 	#print(r.t+dt, r.integrate(r.t+dt))
 
 	rock.tick(dt)
 
 sol = np.array(sol)
 
+np.save('solution', sol)
+
 ax = plt.subplot(111, aspect=1)
 
 
 
-ax.plot(sol[:,0], sol[:,1])
+ax.plot(sol[:,1], sol[:,2])
 
 earth = mpatches.Circle((0, 0), 6400000, fc="g")
 atmosphere = mpatches.Circle((0, 0), 6500000, facecolor='none', edgecolor='r', linestyle='--')
