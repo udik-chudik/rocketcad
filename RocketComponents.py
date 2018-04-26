@@ -71,7 +71,7 @@ class Stage(object):
 		self.tanks = tanks
 		self.engines = engines
 		self.R = R
-
+		self.is_separated = False
 		self.recalcRcm()
 
 	def getMass(self):
@@ -104,6 +104,7 @@ class Stage(object):
 		[c.separate() for c in self.construction]
 		[c.separate() for c in self.tanks]
 		[c.setThrottle(0) for c in self.engines]
+		self.is_separated = True
 		self.recalcRcm()
 
 

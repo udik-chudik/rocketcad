@@ -16,7 +16,7 @@ ph = Physics(rock, -9.8, 6400000, np.array([0,6400000,0]), np.array([0, 0, 0]), 
 
 r = ode(ph.dynamics6d).set_integrator('vode', method='bdf')
 
-f = np.array([0,6400000,0, 0, 0, 0, 0, 0, 0, 0, 0, -0.0046])
+f = np.array([0,6400000,0, 0, 0, 0, 0, 0, 0, 0, 0, -0.0044])
 r.set_initial_value(f, 0)
 
 tMax = 3600*2
