@@ -77,11 +77,13 @@ class Stage(object):
 	def getMass(self):
 		return np.array([c.mass for c in self.construction]).sum(axis=0) + np.array([t.getMass() for t in self.tanks]).sum(axis=0)
 
+
 	def recalcRcm(self):
 		if (self.getMass() == 0):
 			self.Rcm = np.array([0,0,0])
 		else:
 			self.Rcm = ( np.array([c.mass*c.Rcm for c in self.construction]).sum(axis=0) + np.array([t.getMass()*t.getRcm() for t in self.tanks]).sum(axis=0) ) / self.getMass()
+
 
 
 	def getRcm(self):
@@ -111,14 +113,20 @@ class Stage(object):
 			
 class SolidObject(object):
 	"""docstring for SolidObject"""
-	def __init__(self, mass, Rcm):
+	def __init__(self, mass, Rcm, I = np.array([[1,0,0],[0,1,0],[0,0,1]])):
 		super(SolidObject, self).__init__()
 		self.mass = mass
 		self.Rcm = Rcm
+		self.I = I
 
 	def separate(self):
 		self.mass = 0
-		
+	
+	def getInertia(self, R):
+		Rc = Rcm - R
+		return self.I + self.mass*(Rc.dot(Rc)*np.eye(3) - np.array([[Rc[0]*Rc[0], Rc[0]*Rc[1], Rc[0]*Rc[2]],
+			[Rc[1]*Rc[0], Rc[1]*Rc[1], Rc[1]*Rc[2]],
+			[Rc[2]*Rc[0], Rc[2]*Rc[1], Rc[2]*Rc[2]]]))
 
 		
 class Tank(object):
