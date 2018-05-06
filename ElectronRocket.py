@@ -10,6 +10,11 @@ class ElectronRocket(Rocket):
 		engine1 = self.engines[0]
 		engine2 = self.engines[1]
 
+		#print(np.linalg.norm(self.omega.getValue()))
+		omega = self.omega.getValue()
+
+		engine1.setOrientation(euler.euler2mat(0, 0, 0.0044 + omega[2], axes='sxyz'))
+
 		stage1 = self.stages[0]
 
 		if (t < 153):
@@ -34,9 +39,9 @@ class ElectronRocket(Rocket):
 def Electron():
 
 	#Initial position
-	O = euler.euler2mat(0, 0, 0, axes='sxyz')
+	O = euler.euler2mat(0, 0, 0.00, axes='sxyz')
 
-	stage1_construction = SolidObject(950 + 50, np.array([ -6.0, 0, 0 ]))
+	stage1_construction = SolidObject(950 + 50, np.array([ -6.0, 0, 0 ]), np.array([[1,0,0],[0,1000,0],[0,0,1000000]]))
 
 	tank1 = Tank(10, 9250, np.array([ -1, 0, 0 ]))
 
@@ -47,7 +52,7 @@ def Electron():
 	st1 = Stage([stage1_construction], [tank1], [eng1], np.array([-2.4,0,0]))
 
 
-	stage2_construction = SolidObject(250 + 50, np.array([ -1.7, 0, 0 ]))
+	stage2_construction = SolidObject(250 + 50, np.array([ -1.7, 0, 0 ]), np.array([[1,0,0],[0,100,0],[0,0,1000]]))
 
 	tank2 = Tank(1.8, 2150, np.array([ -0.5, 0, 0 ]))
 	fl2 = FuelLine(tank2, 1.0)

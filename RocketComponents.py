@@ -17,6 +17,8 @@ class Rocket(object):
 		self.stages = stages
 		self.recalcRcm()
 		self.clock = Sensor(0)
+		self.velocity = Sensor(np.array([0,0,0]))
+		self.omega = Sensor(np.array([0,0,0]))
 
 	def getRcm(self):
 		return self.Rcm
@@ -36,10 +38,12 @@ class Rocket(object):
 
 	def getInertia(self):
 		#return np.array([[1, 0, 0],[0, 100, 0],[0, 0, 100]])
-		return np.array([10, 100, 100])
+		return np.array([s.getInertia(self.Rcm) for s in self.stages]).sum(axis=0)
 
-	def tick(self, dt):
+	def tick(self, dt, vel, omg):
 		self.clock.setValue(self.clock.getValue() + dt)
+		self.velocity.setValue(vel)
+		self.omega.setValue(omg)
 		self.flightController()
 		[s.tick(dt) for s in self.stages]
 		self.recalcRcm()
@@ -84,6 +88,11 @@ class Stage(object):
 		else:
 			self.Rcm = ( np.array([c.mass*c.Rcm for c in self.construction]).sum(axis=0) + np.array([t.getMass()*t.getRcm() for t in self.tanks]).sum(axis=0) ) / self.getMass()
 
+	def getInertia(self, r):
+		if not self.is_separated:
+			return np.array([c.getInertia(self.R - r) for c in self.construction]).sum(axis=0)
+		else:
+			return np.array([[0,0,0],[0,0,0],[0,0,0]])
 
 
 	def getRcm(self):
@@ -92,8 +101,6 @@ class Stage(object):
 	def getThrust(self):
 		return np.array([e.getThrust() for e in self.engines]).sum(axis=0)
 
-	def getInertia(self):
-		return self.I
 
 	def getMoment(self, Rcm):
 		return np.array([np.cross((e.R + self.R - Rcm), e.getThrust()) for e in self.engines]).sum(axis=0)
@@ -123,7 +130,7 @@ class SolidObject(object):
 		self.mass = 0
 	
 	def getInertia(self, R):
-		Rc = Rcm - R
+		Rc = self.Rcm - R
 		return self.I + self.mass*(Rc.dot(Rc)*np.eye(3) - np.array([[Rc[0]*Rc[0], Rc[0]*Rc[1], Rc[0]*Rc[2]],
 			[Rc[1]*Rc[0], Rc[1]*Rc[1], Rc[1]*Rc[2]],
 			[Rc[2]*Rc[0], Rc[2]*Rc[1], Rc[2]*Rc[2]]]))
@@ -205,3 +212,6 @@ class Engine(object):
 		except Exception:
 			self.setThrottle(0)
 			self.fault = True
+
+	def setOrientation(self, o):
+		self.O = o

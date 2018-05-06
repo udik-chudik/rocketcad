@@ -34,9 +34,9 @@ class Physics(object):
 
 		rot = self.pos.dot(rot2rocket)
 
+		omega = np.array([omega_x, omega_y, omega_z])
 
-		Ipv = self.rocket.getInertia()
-
+		I = self.rocket.getInertia()
 
 		a = np.concatenate([
 			rot.dot(V),
@@ -44,16 +44,20 @@ class Physics(object):
 			self.rocket.getThrust()/self.rocket.getMass() - np.cross(np.array([omega_x, omega_y, omega_z]), V)
 			+ self.g0*(self.R0**2/R2)*np.array([X/R, Y/R, Z/R]).dot(rot),
 			
-			np.array([omega_x, omega_y, omega_z]),
+			omega,
 			
-			self.rocket.getMoment()/Ipv - np.array([
-				(Ipv[2] - Ipv[1])*omega_y*omega_z/Ipv[0],
-				(Ipv[0] - Ipv[2])*omega_z*omega_x/Ipv[1],
-				(Ipv[1] - Ipv[0])*omega_x*omega_y/Ipv[2]
-				])
+			(np.linalg.inv(I)).dot(self.rocket.getMoment() - np.cross(omega, I.dot(omega)))
 			])
 
 		#print(a)
 
 
 		return a
+#self.rocket.getMoment() - np.cross(omega, I.dot(omega)))
+"""
+			self.rocket.getMoment()/Ipv - np.array([
+				(Ipv[2] - Ipv[1])*omega_y*omega_z/Ipv[0],
+				(Ipv[0] - Ipv[2])*omega_z*omega_x/Ipv[1],
+				(Ipv[1] - Ipv[0])*omega_x*omega_y/Ipv[2]
+				])
+			"""
